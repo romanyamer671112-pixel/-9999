@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة السنتر التعليمي المتكامل</title>
+
+    <!-- ربط صورة وأيقونة التطبيق والشاشة الرئيسية -->
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .gold-gradient { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-amber-500 selection:text-black">
+
+    <!-- Auth Container -->
+    <div id="authContainer" class="flex min-h-screen items-center justify-center p-4 bg-slate-950">
+        <div class="bg-slate-900 border border-amber-500/30 p-8 rounded-3xl shadow-2xl w-full max-w-md relative overflow-hidden">
+            <div class="text-center mb-8">
+                <div class="inline-flex p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 mb-3">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                </div>
+                <h2 class="text-2xl font-black text-white">إدارة السنتر التعليمي</h2>
+                <p class="text-xs text-slate-400 mt-1">سجل دخولك أو أنشئ حساب جديد للسنتر</p>
+            </div>
+            <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-amber-400 mb-1">اسم السنتر</label>
+                    <input type="text" id="centerName" required placeholder="مثال: سنتر التفوق التعليمي" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:border-amber-500 focus:outline-none text-white transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-amber-400 mb-1">البريد الإلكتروني أو الهاتف</label>
+                    <input type="text" id="authIdentity" required placeholder="010XXXXXXXX أو email@domain.com" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:border-amber-500 focus:outline-none text-white transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-amber-400 mb-1">كلمة السر</label>
+                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:border-amber-500 focus:outline-none text-white transition">
+                </div>
+                <button type="submit" class="w-full gold-gradient hover:opacity-90 text-slate-950 font-black py-3.5 rounded-xl transition shadow-lg shadow-amber-500/10">الدخول إلى الحساب</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Application Container -->
+    <div id="appDashboard" class="hidden min-h-screen flex-col">
+        <!-- Header / Navbar -->
+        <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 font-black text-xl">🏫</div>
+                    <div>
+                        <h1 id="displayCenterName" class="font-black text-lg text-white">اسم السنتر</h1>
+                        <p class="text-[10px] text-amber-500/80 font-bold tracking-widest uppercase">منظومة الإدارة الذكية المتكاملة</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold rounded-xl transition">تسجيل الخروج</button>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-7xl mx-auto w-full p-4 md:p-6 space-y-6">
+            <!-- 📊 العدادات المالية والتشغيلية -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-emerald-500/30 p-5 rounded-2xl shadow-lg">
+                    <p class="text-xs font-bold text-slate-400 mb-1">إجمالي الوارد (الإيرادات)</p>
+                    <h3 id="statIncome" class="text-2xl font-black text-emerald-400">0 ج.م</h3>
+                </div>
+                <div class="bg-slate-900 border border-red-500/30 p-5 rounded-2xl shadow-lg">
+                    <p class="text-xs font-bold text-slate-400 mb-1">إجمالي المصروفات</p>
+                    <h3 id="statExpenses" class="text-2xl font-black text-red-400">0 ج.م</h3>
+                </div>
+                <div class="bg-slate-900 border border-amber-500/30 p-5 rounded-2xl shadow-lg">
+                    <p class="text-xs font-bold text-slate-400 mb-1">مرتبات المدرسين والسكرتارية</p>
+                    <h3 id="statSalaries" class="text-2xl font-black text-amber-400">0 ج.م</h3>
+                </div>
+                <div class="bg-slate-900 border border-cyan-500/30 p-5 rounded-2xl shadow-lg">
+                    <p class="text-xs font-bold text-slate-400 mb-1">المجموع الكلي (الصافي)</p>
+                    <h3 id="statNetTotal" class="text-2xl font-black text-cyan-400">0 ج.م</h3>
+                </div>
+            </section>
+
+            <!-- 🎯 ماسح الباركود / الحضور السريع -->
+            <section class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="w-3 h-3 rounded-full bg-amber-500 animate-pulse"></div>
+                    <h3 class="font-bold text-white text-base">تسجيل الحضور السريع (عدسة الباركود / سيريال R)</h3>
+                </div>
+                <div class="flex flex-col md:flex-row gap-3">
+                    <input type="text" id="barcodeInput" placeholder="امسح بالعدسة أو اكتب السيريال (مثال: R1001)..." onkeydown="if(event.key==='Enter') processBarcode()" class="flex-1 px-5 py-3.5 bg-slate-950 border border-slate-800 rounded-xl text-lg font-mono text-amber-400 focus:border-amber-500 focus:outline-none">
+                    <button onclick="processBarcode()" class="gold-gradient text-slate-950 font-black px-8 py-3.5 rounded-xl hover:opacity-90 transition">تسجيل الحضور</button>
+                </div>
+                <p id="barcodeStatus" class="text-xs mt-2 font-bold"></p>
+            </section>
+
+            <!-- Navigation Tabs -->
+            <div class="flex border-b border-slate-800 space-x-2 space-x-reverse overflow-x-auto pb-2">
+                <button onclick="switchTab('students')" id="tabBtn-students" class="px-5 py-2.5 rounded-xl font-bold text-sm bg-amber-500/10 text-amber-400 border border-amber-500/30">👨‍🎓 الطلاب</button>
+                <button onclick="switchTab('teachers')" id="tabBtn-teachers" class="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-400 hover:bg-slate-800">👨‍🏫 المدرسين</button>
+                <button onclick="switchTab('staff')" id="tabBtn-staff" class="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-400 hover:bg-slate-800">💼 السكرتارية</button>
+                <button onclick="switchTab('subjects')" id="tabBtn-subjects" class="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-400 hover:bg-slate-800">📚 المواد والأسعار</button>
+                <button onclick="switchTab('finances')" id="tabBtn-finances" class="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-400 hover:bg-slate-800">💸 المصروفات</button>
+            </div>
+
+            <!-- TAB 1: Students -->
+            <section id="tab-students" class="space-y-4">
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="font-bold text-white text-base border-b border-slate-800 pb-2">إضافة طالب جديد</h3>
+                    <form onsubmit="addStudentDirect(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <div>
+                            <label class="block font-bold text-amber-400 mb-1">سيريال الكارت (R)</label>
+                            <input id="stuSerialInput" required class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-amber-400 font-mono font-bold">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-amber-400 mb-1">اسم الطالب</label>
+                            <input id="stuNameInput" required placeholder="اسم الطالب الثلاثي" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-amber-400 mb-1">المرحلة الدراسية</label>
+                            <select id="stuStageInput" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                                <option>KG1</option><option>KG2</option>
+                                <option>1 ابتدائي</option><option>2 ابتدائي</option><option>3 ابتدائي</option><option>4 ابتدائي</option><option>5 ابتدائي</option><option>6 ابتدائي</option>
+                                <option>1 إعدادي</option><option>2 إعدادي</option><option>3 إعدادي</option>
+                                <option>1 ثانوي</option><option>2 ثانوي</option><option>3 ثانوي</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-amber-400 mb-1">المبلغ الأصلي المطلـوب (ج.م)</label>
+                            <input id="stuOrigInput" type="number" required oninput="calcStudentRem()" placeholder="مثال: 500" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-amber-400 mb-1">المبلغ المدفـوع (ج.م)</label>
+                            <input id="stuPaidInput" type="number" required oninput="calcStudentRem()" placeholder="مثال: 300" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-red-400 mb-1">المبلغ الباقي (يحسب آلياً)</label>
+                            <input id="stuDueInput" readonly value="0" class="w-full p-3 rounded-xl bg-slate-950 border border-red-500/50 text-red-400 font-bold">
+                        </div>
+                        <div class="md:col-span-3">
+                            <button type="submit" class="gold-gradient text-slate-950 font-black px-6 py-3 rounded-xl w-full hover:opacity-90 transition">+ حفظ الطالب وتأكيد الاشتراك</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-xs text-slate-300">
+                            <thead class="bg-slate-950 text-amber-400 font-extrabold border-b border-slate-800">
+                                <tr>
+                                    <th class="p-4">السيريال</th>
+                                    <th class="p-4">اسم الطالب</th>
+                                    <th class="p-4">المرحلة</th>
+                                    <th class="p-4">المبلغ الأصلي</th>
+                                    <th class="p-4">المدفوع</th>
+                                    <th class="p-4">الباقي / المتأخرات</th>
+                                    <th class="p-4 text-center">الكارت والتعديل والإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentTableBody" class="divide-y divide-slate-800/50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: Teachers -->
+            <section id="tab-teachers" class="hidden space-y-4">
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="font-bold text-white text-base border-b border-slate-800 pb-2">إضافة مدرس وتحديد المواعيد</h3>
+                    <form onsubmit="addTeacherDirect(event)" class="space-y-3 text-xs">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block font-bold text-amber-400 mb-1">اسم المدرس</label>
+                                <input id="techNameInput" required placeholder="مثال: أ/ أحمد علي" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-amber-400 mb-1">المادة / التخصص</label>
+                                <input id="techSubInput" required placeholder="مثال: رياضيات" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-amber-400 mb-1">المرتب الشهرى (ج.م)</label>
+                                <input id="techSalInput" type="number" required placeholder="مثال: 3000" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-amber-400 mb-1">أيام الحصص الأسبوعية:</label>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 bg-slate-950 p-3 rounded-xl border border-slate-800 text-[11px]">
+                                <label><input type="checkbox" name="tDaysCheck" value="السبت"> السبت</label>
+                                <label><input type="checkbox" name="tDaysCheck" value="الأحد"> الأحد</label>
+                                <label><input type="checkbox" name="tDaysCheck" value="الاثنين"> الاثنين</label>
+                                <label><input type="checkbox" name="tDaysCheck" value="الثلاثاء"> الثلاثاء</label>
+                                <label><input type="checkbox" name="tDaysCheck" value="الأربعاء"> الأربعاء</label>
+                                <label><input type="checkbox" name="tDaysCheck" value="الخميس"> الخميس</label>
+                                <label><input type="checkbox" name="tDaysCheck" value="الجمعة"> الجمعة</label>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold text-amber-400 mb-1">من الساعة</label>
+                                <input id="techStartInput" type="time" required class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-amber-400 mb-1">إلى الساعة</label>
+                                <input id="techEndInput" type="time" required class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                            </div>
+                        </div>
+                        <button type="submit" class="gold-gradient text-slate-950 font-black px-6 py-3 rounded-xl w-full hover:opacity-90 transition">+ حفظ المدرس والمواعيد</button>
+                    </form>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="teachersGrid"></div>
+            </section>
+
+            <!-- TAB 3: Staff (السكرتارية) -->
+            <section id="tab-staff" class="hidden space-y-4">
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="font-bold text-white text-base border-b border-slate-800 pb-2">إضافة موظف سكرتارية جديد</h3>
+                    <form onsubmit="addStaffDirect(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <div>
+                            <label class="block font-bold text-amber-400 mb-1">اسم موظف السكرتارية</label>
+                            <input id="staffNameInput" required placeholder="مثال: سارة محمد" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-amber-400 mb-1">رقم الهاتف</label>
+                            <input id="staffPhoneInput" required placeholder="010XXXXXXXX" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-amber-400 mb-1">المرتب الشهري (ج.م)</label>
+                            <input id="staffSalaryInput" type="number" required placeholder="مثال: 2000" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                        </div>
+                        <div class="md:col-span-3">
+                            <button type="submit" class="gold-gradient text-slate-950 font-black px-6 py-3 rounded-xl w-full hover:opacity-90 transition">+ حفظ الموظف</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                    <div class="p-4 border-b border-slate-800 font-bold text-amber-400">سجل السكرتارية وحضورهم اليومي</div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-xs text-slate-300">
+                            <thead class="bg-slate-950 text-amber-400 font-extrabold border-b border-slate-800">
+                                <tr>
+                                    <th class="p-4">اسم الموظف</th>
+                                    <th class="p-4">الهاتف</th>
+                                    <th class="p-4">المرتب</th>
+                                    <th class="p-4">آخر تسجيل حضور</th>
+                                    <th class="p-4 text-center">إجراءات الحضور والحذف</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staffTableBody" class="divide-y divide-slate-800/50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: Subjects -->
+            <section id="tab-subjects" class="hidden space-y-4">
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="font-bold text-white text-base border-b border-slate-800 pb-2">إضافة مادة جديدة وأسعارها</h3>
+                    <form onsubmit="addSubjectDirect(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <div>
+                            <label class="block font-bold text-amber-400 mb-1">اسم المادة الدراسية</label>
+                            <input id="subNameInput" required placeholder="مثال: لغة عربية" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-amber-400 mb-1">سعر المادة شهرياً (ج.م)</label>
+                            <input id="subPriceInput" type="number" required placeholder="مثال: 150" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" class="gold-gradient text-slate-950 font-black px-6 py-3 rounded-xl w-full hover:opacity-90 transition">+ حفظ المادة</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="subjectsGrid"></div>
+            </section>
+
+            <!-- TAB 5: Finances -->
+            <section id="tab-finances" class="hidden space-y-4">
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="font-bold text-white text-base border-b border-slate-800 pb-2">تسجيل المصروفات والمرتبات الإضافية</h3>
+                    <form onsubmit="addFinanceDirect(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                        <div>
+                            <label class="block font-bold text-amber-400 mb-1">نوع البند</label>
+                            <select id="finTypeInput" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                                <option value="expense">مصروفات تشغيلية</option>
+                                <option value="salary">مرتبات ومستحقات</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-amber-400 mb-1">البيان / الوصف</label>
+                            <input id="finTitleInput" required placeholder="مثال: فاتورة كهرباء أو أدوات كتابية" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-amber-400 mb-1">المبلغ (ج.م)</label>
+                            <input id="finAmountInput" type="number" required placeholder="مثال: 500" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white">
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" class="gold-gradient text-slate-950 font-black px-6 py-3 rounded-xl w-full hover:opacity-90 transition">+ حفظ البند المالي</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-xs text-slate-300">
+                            <thead class="bg-slate-950 text-amber-400 font-extrabold border-b border-slate-800">
+                                <tr>
+                                    <th class="p-4">التاريخ</th>
+                                    <th class="p-4">النوع</th>
+                                    <th class="p-4">البيان</th>
+                                    <th class="p-4">المبلغ</th>
+                                    <th class="p-4 text-center">حذف</th>
+                                </tr>
+                            </thead>
+                            <tbody id="financeTableBody" class="divide-y divide-slate-800/50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        let centerSession = null;
+        let students = [], teachers = [], staff = [], subjects = [], finances = [];
+
+        window.onload = function() {
+            const session = localStorage.getItem('activeCenterSession');
+            if (session) {
+                centerSession = JSON.parse(session);
+                loadCenterData();
+                showDashboard();
+            }
+        };
+
+        function handleAuth(e) {
+            e.preventDefault();
+            centerSession = { centerName: document.getElementById('centerName').value };
+            localStorage.setItem('activeCenterSession', JSON.stringify(centerSession));
+            loadCenterData();
+            showDashboard();
+        }
+
+        function loadCenterData() {
+            const key = 'data_' + centerSession.centerName;
+            const data = JSON.parse(localStorage.getItem(key)) || { students: [], teachers: [], staff: [], subjects: [], finances: [] };
+            students = data.students || [];
+            teachers = data.teachers || [];
+            staff = data.staff || [];
+            subjects = data.subjects || [];
+            finances = data.finances || [];
+            updateNextSerial();
+        }
+
+        function saveCenterData() {
+            localStorage.setItem('data_' + centerSession.centerName, JSON.stringify({ students, teachers, staff, subjects, finances }));
+            renderAll();
+        }
+
+        function showDashboard() {
+            document.getElementById('authContainer').classList.add('hidden');
+            document.getElementById('appDashboard').classList.remove('hidden');
+            document.getElementById('appDashboard').classList.add('flex');
+            document.getElementById('displayCenterName').innerText = centerSession.centerName;
+            renderAll();
+        }
+
+        function logout() {
+            localStorage.removeItem('activeCenterSession');
+            location.reload();
+        }
+
+        function updateNextSerial() {
+            const stuSerialInput = document.getElementById('stuSerialInput');
+            if (stuSerialInput) {
+                stuSerialInput.value = 'R' + (1001 + students.length);
+            }
+        }
+
+        function switchTab(tab) {
+            ['students', 'teachers', 'staff', 'subjects', 'finances'].forEach(t => {
+                document.getElementById('tab-' + t).classList.add('hidden');
+                document.getElementById('tabBtn-' + t).className = "px-5 py-2.5 rounded-xl font-bold text-sm text-slate-400 hover:bg-slate-800";
+            });
+            document.getElementById('tab-' + tab).classList.remove('hidden');
+            document.getElementById('tabBtn-' + tab).className = "px-5 py-2.5 rounded-xl font-bold text-sm bg-amber-500/10 text-amber-400 border border-amber-500/30";
+        }
+
+        function renderAll() {
+            let studentPaid = students.reduce((acc, s) => acc + (Number(s.paid) || 0), 0);
+            let teacherSalaries = teachers.reduce((acc, t) => acc + (Number(t.salary) || 0), 0);
+            let staffSalaries = staff.reduce((acc, st) => acc + (Number(st.salary) || 0), 0);
+            let expenses = finances.filter(f => f.type === 'expense').reduce((acc, f) => acc + Number(f.amount), 0);
+            let otherSalaries = finances.filter(f => f.type === 'salary').reduce((acc, f) => acc + Number(f.amount), 0);
+
+            let totalSalaries = teacherSalaries + staffSalaries + otherSalaries;
+            let net = studentPaid - (expenses + totalSalaries);
+
+            document.getElementById('statIncome').innerText = studentPaid.toLocaleString() + ' ج.م';
+            document.getElementById('statExpenses').innerText = expenses.toLocaleString() + ' ج.م';
+            document.getElementById('statSalaries').innerText = totalSalaries.toLocaleString() + ' ج.م';
+            document.getElementById('statNetTotal').innerText = net.toLocaleString() + ' ج.م';
+
+            renderStudents();
+            renderTeachers();
+            renderStaff();
+            renderSubjects();
+            renderFinances();
+            updateNextSerial();
+        }
+
+        function renderStudents() {
+            const tbody = document.getElementById('studentTableBody');
+            if (students.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">لا يوجد طلاب مسجلون</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = students.map(s => `
+                <tr class="hover:bg-slate-800/40">
+                    <td class="p-4 font-mono text-amber-400 font-black">${s.serial}</td>
+                    <td class="p-4 font-bold text-white">${s.name}</td>
+                    <td class="p-4 text-slate-400">${s.stage}</td>
+                    <td class="p-4 font-bold text-slate-300">${s.originalAmount} ج.م</td>
+                    <td class="p-4 font-bold text-emerald-400">${s.paid} ج.م</td>
+                    <td class="p-4 font-bold ${s.due > 0 ? 'text-red-400' : 'text-emerald-400'}">${s.due > 0 ? `${s.due} ج.م (باقي)` : 'خالي الطرف ✅'}</td>
+                    <td class="p-4 text-center space-x-1 space-x-reverse">
+                        <button onclick="editStudentSerial('${s.serial}')" class="px-2 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-bold">تعديل الكود</button>
+                        <button onclick="printCard('${s.serial}')" class="px-2 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-bold">طباعة الكارت 🪪</button>
+                        <button onclick="deleteStudent('${s.serial}')" class="px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/30 rounded-lg text-xs font-bold">حذف</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderTeachers() {
+            const grid = document.getElementById('teachersGrid');
+            if (teachers.length === 0) {
+                grid.innerHTML = `<p class="text-slate-500 text-xs">لا يوجد مدرسون مسجلون</p>`;
+                return;
+            }
+            grid.innerHTML = teachers.map(t => `
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="font-bold text-white text-base">${t.name}</h4>
+                            <p class="text-xs text-amber-400 font-bold">${t.subject} - المرتب: ${t.salary} ج.م</p>
+                        </div>
+                        <button onclick="deleteTeacher('${t.id}')" class="text-red-400 font-bold text-xs">حذف</button>
+                    </div>
+                    <div class="mt-3 p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1">
+                        <p class="font-bold text-slate-400">📅 الأيام: ${t.days.length > 0 ? t.days.join(' - ') : 'لم تحدد'}</p>
+                        <p class="font-bold text-slate-400">⏰ الوقت: من ${t.startTime || '--'} إلى ${t.endTime || '--'}</p>
+                        <p class="font-bold text-emerald-400">آخر حضور: ${t.lastAttendance || 'لم يسجل حضور بعد'}</p>
+                    </div>
+                    <button onclick="markTeacherAttendance('${t.id}')" class="mt-3 w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs py-2 rounded-xl font-bold transition">تسجيل حضور المدرس الآن ⏱️</button>
+                </div>
+            `).join('');
+        }
+
+        function renderStaff() {
+            const tbody = document.getElementById('staffTableBody');
+            if (staff.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-500">لا يوجد موظفو سكرتارية مسجلون</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = staff.map(st => `
+                <tr class="hover:bg-slate-800/40">
+                    <td class="p-4 font-bold text-white">${st.name}</td>
+                    <td class="p-4 text-slate-400">${st.phone}</td>
+                    <td class="p-4 font-bold text-amber-400">${st.salary} ج.م</td>
+                    <td class="p-4 text-emerald-400 font-bold">${st.lastAttendance || 'لم يتم التسجيل'}</td>
+                    <td class="p-4 text-center space-x-1 space-x-reverse">
+                        <button onclick="markStaffAttendance('${st.id}')" class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold">تسجيل حضور</button>
+                        <button onclick="deleteStaff('${st.id}')" class="px-3 py-1 bg-red-500/10 text-red-400 border border-red-500/30 rounded-lg text-xs font-bold">حذف</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderSubjects() {
+            const grid = document.getElementById('subjectsGrid');
+            if (subjects.length === 0) {
+                grid.innerHTML = `<p class="text-slate-500 text-xs">لا توجد مواد مسجلة</p>`;
+                return;
+            }
+            grid.innerHTML = subjects.map(s => `
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-white">${s.name}</h4>
+                        <p class="text-xs text-amber-400 font-bold">${s.price} ج.م / شهر</p>
+                    </div>
+                    <button onclick="deleteSubject('${s.id}')" class="text-red-400 font-bold text-xs">حذف</button>
+                </div>
+            `).join('');
+        }
+
+        function renderFinances() {
+            const tbody = document.getElementById('financeTableBody');
+            if (finances.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-500">لا توجد مصاريف أو مرتبات مسجلة</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = finances.map(f => `
+                <tr class="hover:bg-slate-800/40">
+                    <td class="p-4 text-slate-400">${f.date}</td>
+                    <td class="p-4 font-bold ${f.type === 'expense' ? 'text-red-400' : 'text-amber-400'}">${f.type === 'expense' ? 'مصروفات' : 'مرتبات'}</td>
+                    <td class="p-4 font-bold text-white">${f.title}</td>
+                    <td class="p-4 font-bold text-white">${f.amount} ج.م</td>
+                    <td class="p-4 text-center"><button onclick="deleteFinance('${f.id}')" class="text-red-400 font-bold">حذف</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function calcStudentRem() {
+            let orig = Number(document.getElementById('stuOrigInput').value) || 0;
+            let paid = Number(document.getElementById('stuPaidInput').value) || 0;
+            document.getElementById('stuDueInput').value = Math.max(0, orig - paid);
+        }
+
+        function addStudentDirect(e) {
+            e.preventDefault();
+            const serial = document.getElementById('stuSerialInput').value.trim();
+            const name = document.getElementById('stuNameInput').value.trim();
+
+            if (students.some(s => s.serial.toLowerCase() === serial.toLowerCase())) {
+                alert('❌ السيريال / الكود ' + serial + ' مسجل بالفعل لطالب آخر! يرجى اختيار سيريال مختلف.');
+                return;
+            }
+            if (students.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+                alert('❌ اسم الطالب "' + name + '" مسجل بالفعل في النظام!');
+                return;
+            }
+
+            students.push({
+                serial: serial,
+                name: name,
+                stage: document.getElementById('stuStageInput').value,
+                originalAmount: Number(document.getElementById('stuOrigInput').value) || 0,
+                paid: Number(document.getElementById('stuPaidInput').value) || 0,
+                due: Number(document.getElementById('stuDueInput').value) || 0
+            });
+            saveCenterData();
+            document.getElementById('stuNameInput').value = '';
+            document.getElementById('stuOrigInput').value = '';
+            document.getElementById('stuPaidInput').value = '';
+            document.getElementById('stuDueInput').value = '0';
+        }
+
+        function editStudentSerial(oldSerial) {
+            const student = students.find(s => s.serial === oldSerial);
+            if (!student) return;
+
+            const newSerial = prompt(`تعديل سيريال الطالب (${student.name}):`, student.serial);
+            if (newSerial && newSerial.trim() !== '') {
+                const trimmed = newSerial.trim();
+                if (trimmed !== oldSerial && students.some(s => s.serial.toLowerCase() === trimmed.toLowerCase())) {
+                    alert('❌ هذا الكود مسجل بالفعل لطالب آخر!');
+                    return;
+                }
+                student.serial = trimmed;
+                saveCenterData();
+                alert('✅ تم تعديل الكود بنجاح إلى: ' + trimmed);
+            }
+        }
+
+        function addStaffDirect(e) {
+            e.preventDefault();
+            staff.push({
+                id: Date.now().toString(),
+                name: document.getElementById('staffNameInput').value,
+                phone: document.getElementById('staffPhoneInput').value,
+                salary: Number(document.getElementById('staffSalaryInput').value) || 0,
+                lastAttendance: ''
+            });
+            saveCenterData();
+            document.getElementById('staffNameInput').value = '';
+            document.getElementById('staffPhoneInput').value = '';
+            document.getElementById('staffSalaryInput').value = '';
+        }
+
+        function markStaffAttendance(id) {
+            const st = staff.find(s => s.id === id);
+            if (st) {
+                st.lastAttendance = new Date().toLocaleString('ar-EG');
+                saveCenterData();
+                alert('✅ تم تسجيل حضور الموظف: ' + st.name);
+            }
+        }
+
+        function markTeacherAttendance(id) {
+            const t = teachers.find(item => item.id === id);
+            if (t) {
+                t.lastAttendance = new Date().toLocaleString('ar-EG');
+                saveCenterData();
+                alert('✅ تم تسجيل حضور المدرس: ' + t.name);
+            }
+        }
+
+        function addTeacherDirect(e) {
+            e.preventDefault();
+            const checkedDays = Array.from(document.querySelectorAll('input[name="tDaysCheck"]:checked')).map(cb => cb.value);
+            teachers.push({
+                id: Date.now().toString(),
+                name: document.getElementById('techNameInput').value,
+                subject: document.getElementById('techSubInput').value,
+                salary: Number(document.getElementById('techSalInput').value) || 0,
+                days: checkedDays,
+                startTime: document.getElementById('techStartInput').value,
+                endTime: document.getElementById('techEndInput').value,
+                lastAttendance: ''
+            });
+            saveCenterData();
+            document.getElementById('techNameInput').value = '';
+            document.getElementById('techSubInput').value = '';
+            document.getElementById('techSalInput').value = '';
+        }
+
+        function addSubjectDirect(e) {
+            e.preventDefault();
+            subjects.push({
+                id: Date.now().toString(),
+                name: document.getElementById('subNameInput').value,
+                price: Number(document.getElementById('subPriceInput').value) || 0
+            });
+            saveCenterData();
+            document.getElementById('subNameInput').value = '';
+            document.getElementById('subPriceInput').value = '';
+        }
+
+        function addFinanceDirect(e) {
+            e.preventDefault();
+            finances.push({
+                id: Date.now().toString(),
+                date: new Date().toLocaleDateString('ar-EG'),
+                type: document.getElementById('finTypeInput').value,
+                title: document.getElementById('finTitleInput').value,
+                amount: Number(document.getElementById('finAmountInput').value) || 0
+            });
+            saveCenterData();
+            document.getElementById('finTitleInput').value = '';
+            document.getElementById('finAmountInput').value = '';
+        }
+
+        function processBarcode() {
+            const input = document.getElementById('barcodeInput');
+            const code = input.value.trim();
+            if(!code) return;
+
+            const student = students.find(s => s.serial.toLowerCase() === code.toLowerCase());
+            const statusEl = document.getElementById('barcodeStatus');
+            if(student) {
+                if(student.due > 0) {
+                    statusEl.className = "text-xs mt-2 font-bold text-red-400";
+                    statusEl.innerText = `⚠️ الطالب ${student.name} عليه باقي: ${student.due} ج.م! اضغط تسديد إن أردت.`;
+                    if(confirm(`الطالب ${student.name} عليه باقي: ${student.due} ج.م\nهل تريد تسديد الباقي الآن؟`)) {
+                        student.paid += student.due;
+                        student.due = 0;
+                        saveCenterData();
+                        statusEl.className = "text-xs mt-2 font-bold text-emerald-400";
+                        statusEl.innerText = `✅ تم تسديد باقي حساب الطالب ${student.name} وتسجيل الحضور.`;
+                    }
+                } else {
+                    statusEl.className = "text-xs mt-2 font-bold text-emerald-400";
+                    statusEl.innerText = `✅ تم تسجيل حضور الطالب: ${student.name} (${student.serial}) - الساعة ${new Date().toLocaleTimeString('ar-EG')}`;
+                }
+            } else {
+                statusEl.className = "text-xs mt-2 font-bold text-red-400";
+                statusEl.innerText = `❌ لم يتم العثور على طالب بهذا السيريال (${code})`;
+            }
+            input.value = '';
+        }
+
+        function printCard(serial) {
+            const student = students.find(s => s.serial === serial);
+            if (!student) return;
+            const printWindow = window.open('', '', 'width=400,height=300');
+            printWindow.document.write(`
+                <html dir="rtl"><head><title>كارت طالب - ${student.name}</title></head>
+                <body style="font-family: Arial, sans-serif; text-align: center; padding: 20px; border: 3px solid #000; border-radius: 10px;">
+                    <h2>${centerSession.centerName}</h2>
+                    <h3 style="color:#d97706;">كارت الطالب الذكي</h3>
+                    <p style="font-size:18px; font-weight:bold;">الاسم: ${student.name}</p>
+                    <p style="font-size:16px;">المرحلة: ${student.stage}</p>
+                    <div style="font-size:26px; font-weight:bold; letter-spacing:3px; background:#000; color:#fff; padding:8px; border-radius:8px; margin-top:10px;">
+                        ${student.serial}
+                    </div>
+                </body></html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function deleteStudent(serial) { students = students.filter(s => s.serial !== serial); saveCenterData(); }
+        function deleteTeacher(id) { teachers = teachers.filter(t => t.id !== id); saveCenterData(); }
+        function deleteStaff(id) { staff = staff.filter(s => s.id !== id); saveCenterData(); }
+        function deleteSubject(id) { subjects = subjects.filter(s => s.id !== id); saveCenterData(); }
+        function deleteFinance(id) { finances = finances.filter(f => f.id !== id); saveCenterData(); }
+    </script>
+</body>
+</html>
